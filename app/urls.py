@@ -7,6 +7,7 @@ urlpatterns = [
     path("control-asistencia/", views.control_asistencia, name="control_asistencia"),
     path("attendance-action/", views.control_asistencia, name="attendance_action"),
     path("logout/", views.logout_view, name="logout"),
+    path("dashboard/", views.dashboard_view, name="dashboard"),
     path(
         "api/attendance-history/",
         views.get_attendance_history_api,
