@@ -112,3 +112,6 @@ def get_current_status_api(request):
         return JsonResponse(
             {"success": False, "message": f"Error al obtener estado: {str(e)}"}
         )
+
+def dashboard_view(request):
+    return render(request, "dashboard.html")
