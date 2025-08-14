@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Asistencia - Registro de Horario</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    @keyframes pulse-ring {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+      }
+
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+      }
+
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+      }
+    }
+
+    .pulse-animation {
+      animation: pulse-ring 2s infinite;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateY(-10px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .slide-in {
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .timer {
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .history-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .history-card {
+      transition: all 0.3s ease;
+    }
+
+    .status-badge {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 9999px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+  <!-- Header -->
+  <header class="bg-white shadow-sm border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center">
+          <i class="fas fa-clock text-blue-600 text-2xl mr-3"></i>
+          <h1 class="text-xl font-semibold text-gray-900">Control de Asistencia</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+          <!-- User info -->
+          <div class="flex items-center space-x-3">
+            <div class="text-right">
+              <p class="text-sm font-medium text-gray-900">{{ user.name }}</p>
+              <p class="text-xs text-gray-500">{{ user.email }}</p>
+            </div>
+            <div class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
+              <i class="fas fa-user text-white text-sm"></i>
+            </div>
+          </div>
+          
+          <!-- Date and time -->
+          <div class="border-l border-gray-300 pl-4">
+            <span class="text-sm text-gray-600" id="currentDate"></span>
+            <span class="text-lg font-medium text-gray-900" id="currentTime"></span>
+          </div>
+          
+          <!-- Logout button -->
+          <form method="post" action="{% url 'logout' %}" class="inline" id="logoutForm">
+            {% csrf_token %}
+            <button type="button" 
+              class="flex items-center px-3 py-2 text-sm text-gray-700 hover:text-red-600 hover:bg-gray-50 rounded-lg transition-colors duration-200"
+              onclick="confirmLogout()">
+              <i class="fas fa-sign-out-alt mr-1"></i>
+              Cerrar Sesión
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Status Card -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+      <div class="text-center">
+        <div class="mb-4">
+          <div id="statusIcon"
+            class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gray-100 mb-4 transition-all duration-300">
+            <i class="fas fa-user-clock text-4xl text-gray-400"></i>
+          </div>
+          <h2 id="statusText" class="text-2xl font-bold text-gray-900 mb-2">No has iniciado tu jornada</h2>
+          <p id="statusTime" class="text-gray-600"></p>
+        </div>
+
+        <!-- Action Button -->
+        <button id="actionButton" onclick="toggleAttendance()"
+          class="px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg">
+          <i class="fas fa-sign-in-alt mr-2"></i>
+          <span id="buttonText">Marcar Entrada</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Today's Summary -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-600">Entrada de hoy</p>
+            <p id="todayEntry" class="text-2xl font-bold text-gray-900">--:--</p>
+          </div>
+          <div class="bg-green-100 p-3 rounded-full">
+            <i class="fas fa-sign-in-alt text-green-600 text-xl"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-600">Salida de hoy</p>
+            <p id="todayExit" class="text-2xl font-bold text-gray-900">--:--</p>
+          </div>
+          <div class="bg-red-100 p-3 rounded-full">
+            <i class="fas fa-sign-out-alt text-red-600 text-xl"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-600">Horas trabajadas</p>
+            <p id="hoursWorked" class="text-2xl font-bold text-gray-900">0h 0m</p>
+          </div>
+          <div class="bg-blue-100 p-3 rounded-full">
+            <i class="fas fa-hourglass-half text-blue-600 text-xl"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Section -->
+    <div class="bg-white rounded-lg shadow-md">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-semibold text-gray-900">Historial Completo de Registros</h3>
+          <div class="flex items-center space-x-2">
+            <span id="totalRecords" class="text-sm text-gray-600">Cargando...</span>
+            <button onclick="refreshHistoryFromServer()" id="refreshBtn"
+              class="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full hover:bg-green-200 transition-colors flex items-center">
+              <i class="fas fa-sync-alt mr-1"></i>
+              Actualizar
+            </button>
+            <button onclick="toggleHistoryView()" id="toggleViewBtn" 
+              class="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full hover:bg-blue-200 transition-colors">
+              Ver últimos 10
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="p-6">
+        <!-- Filtros y búsqueda -->
+        <div class="mb-4 flex flex-col sm:flex-row gap-4">
+          <div class="flex-1">
+            <input type="text" id="searchHistory" placeholder="Buscar por fecha..." 
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+          <select id="statusFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <option value="">Todos los estados</option>
+            <option value="completed">Completados</option>
+            <option value="in_progress">En progreso</option>
+            <option value="incomplete">Sin salida</option>
+          </select>
+        </div>
+        
+        <div id="historyList" class="space-y-4">
+          <!-- History items will be inserted here -->
+        </div>
+        <div id="emptyHistory" class="text-center py-8 text-gray-500">
+          <i class="fas fa-calendar-times text-4xl mb-4"></i>
+          <p>No hay registros disponibles</p>
+        </div>
+        
+        <!-- Paginación -->
+        <div id="paginationContainer" class="mt-6 flex justify-center items-center space-x-2">
+          <!-- Pagination will be inserted here -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Notification Toast -->
+  <div id="notification" class="fixed top-4 right-4 transform translate-x-full transition-transform duration-300 z-50">
+    <div class="bg-white rounded-lg shadow-lg p-4 flex items-center space-x-3 min-w-[300px]">
+      <div id="notificationIcon" class="flex-shrink-0"></div>
+      <div>
+        <p id="notificationText" class="text-gray-900 font-medium"></p>
+        <p id="notificationTime" class="text-sm text-gray-600"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Función para confirmar logout con SweetAlert
+    function confirmLogout() {
+      Swal.fire({
+        title: '¿Cerrar sesión?',
+        text: '¿Estás seguro de que deseas cerrar sesión?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Sí, cerrar sesión',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Mostrar loading
+          Swal.fire({
+            title: 'Cerrando sesión...',
+            text: 'Por favor espera',
+            icon: 'info',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            willOpen: () => {
+              Swal.showLoading();
+            }
+          });
+          
+          // Enviar formulario
+          document.getElementById('logoutForm').submit();
+        }
+      });
+    }
+
+    // State management con datos del backend
+    let attendanceStatus = {{ attendance_status_json|safe }};
+    let attendanceHistory = {{ attendance_history_json|safe }};
+    
+    // MEJORADO: Sistema robusto de gestión de estado con localStorage
+    let currentState;
+    
+    // NUEVO: Sistema de cookies como respaldo
+    function setCookie(name, value, hours = 24) {
+      const date = new Date();
+      date.setTime(date.getTime() + (hours * 60 * 60 * 1000));
+      const expires = "expires=" + date.toUTCString();
+      document.cookie = name + "=" + value + ";" + expires + ";path=/";
+      console.log('🍪 Cookie establecida:', name, '=', value);
+    }
+    
+    function getCookie(name) {
+      const nameEQ = name + "=";
+      const ca = document.cookie.split(';');
+      for(let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) {
+          const value = c.substring(nameEQ.length, c.length);
+          console.log('🍪 Cookie obtenida:', name, '=', value);
+          return value;
+        }
+      }
+      console.log('🍪 Cookie no encontrada:', name);
+      return null;
+    }
+    
+    function deleteCookie(name) {
+      document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      console.log('🍪 Cookie eliminada:', name);
+    }
+    
+    // Función para guardar estado en cookies (además de localStorage)
+    function saveStateToCookies(state, data) {
+      const today = new Date().toDateString();
+      setCookie('attendance_state', state, 12); // 12 horas
+      setCookie('attendance_date', today, 12);
+      if (data.entry_time) {
+        setCookie('attendance_entry_time', data.entry_time, 12);
+      }
+      if (data.attendance_id) {
+        setCookie('attendance_id', data.attendance_id, 12);
+      }
+    }
+    
+    // Función para recuperar estado de cookies
+    function getStateFromCookies() {
+      const state = getCookie('attendance_state');
+      const date = getCookie('attendance_date');
+      const today = new Date().toDateString();
+      
+      if (state && date === today) {
+        return {
+          state: state,
+          entry_time: getCookie('attendance_entry_time'),
+          attendance_id: getCookie('attendance_id'),
+          date: date
+        };
+      }
+      
+      // Si es otro día, limpiar cookies
+      if (date && date !== today) {
+        deleteCookie('attendance_state');
+        deleteCookie('attendance_date');
+        deleteCookie('attendance_entry_time');
+        deleteCookie('attendance_id');
+      }
+      
+      return null;
+    }
+    
+    // Función para guardar estado (localStorage + cookies)
+    function saveStateToLocalStorage(state, data) {
+      const stateData = {
+        state: state,
+        data: data,
+        timestamp: new Date().getTime(),
+        date: new Date().toDateString() // Para validar que es del mismo día
+      };
+      localStorage.setItem('attendanceState', JSON.stringify(stateData));
+      console.log('💾 Estado guardado en localStorage:', stateData);
+      
+      // También guardar en cookies como respaldo
+      saveStateToCookies(state, data);
+    }
+    
+    // Función para recuperar estado (localStorage + cookies)
+    function getStateFromLocalStorage() {
+      // Intentar primero localStorage
+      try {
+        const saved = localStorage.getItem('attendanceState');
+        if (saved) {
+          const stateData = JSON.parse(saved);
+          const today = new Date().toDateString();
+          
+          // Verificar que sea del mismo día
+          if (stateData.date === today) {
+            console.log('📱 Estado recuperado de localStorage:', stateData);
+            return stateData;
+          } else {
+            console.log('📱 Estado de localStorage es de otro día, limpiando...');
+            localStorage.removeItem('attendanceState');
+          }
+        }
+      } catch (e) {
+        console.log('📱 Error al recuperar estado de localStorage:', e);
+        localStorage.removeItem('attendanceState');
+      }
+      
+      // Si localStorage falla, intentar cookies
+      const cookieState = getStateFromCookies();
+      if (cookieState) {
+        console.log('🍪 Estado recuperado de cookies:', cookieState);
+        return {
+          state: cookieState.state,
+          data: {
+            entry_time: cookieState.entry_time,
+            attendance_id: cookieState.attendance_id
+          },
+          date: cookieState.date
+        };
+      }
+      
+      return null;
+    }
+    
+    // Función para determinar el estado correcto (MEJORADA)
+    function determineCorrectState() {
+      console.log('🔄 === DETERMINANDO ESTADO CORRECTO ===');
+      console.log('Backend state:', attendanceStatus);
+      
+      const savedState = getStateFromLocalStorage();
+      console.log('LocalStorage/Cookies state:', savedState);
+      
+      // PRIORIDAD 1: Si el backend tiene datos válidos, SIEMPRE usarlos
+      if (attendanceStatus && attendanceStatus.status && attendanceStatus.status !== 'out') {
+        console.log('✅ Backend tiene estado VÁLIDO:', attendanceStatus.status);
+        currentState = attendanceStatus.status;
+        saveStateToLocalStorage(currentState, attendanceStatus);
+        console.log('💾 Estado del backend guardado en localStorage y cookies');
+        return;
+      }
+      
+      // PRIORIDAD 2: Si el backend dice 'out' pero localStorage/cookies dicen que hay jornada activa
+      if (savedState && savedState.state === 'in' && attendanceStatus.status === 'out') {
+        console.log('⚠️ CONFLICTO DETECTADO: Respaldo dice IN pero Backend dice OUT');
+        console.log('⚠️ Esto puede ser un problema de zona horaria en el backend');
+        console.log('🔄 Usando estado del respaldo y forzando verificación...');
+        
+        // Usar estado del respaldo
+        currentState = savedState.state;
+        attendanceStatus = { 
+          ...attendanceStatus, 
+          ...savedState.data, 
+          status: savedState.state,
+          message: `Jornada iniciada a las ${savedState.data.entry_time || 'hora desconocida'}`
+        };
+        
+        // Verificar con servidor después de un momento
+        setTimeout(() => {
+          console.log('🔄 Verificando estado con servidor...');
+          forceSyncWithServer();
+        }, 3000);
+        
+        return;
+      }
+      
+      // PRIORIDAD 3: Por defecto, usar estado del backend
+      currentState = attendanceStatus?.status || 'out';
+      console.log('📋 Usando estado del backend por defecto:', currentState);
+      
+      if (currentState !== 'out') {
+        saveStateToLocalStorage(currentState, attendanceStatus);
+      }
+    }
+    
+    // Función para forzar sincronización con servidor
+    function forceSyncWithServer() {
+      console.log('🔄 Forzando sincronización con servidor...');
+      fetch('{% url "current_status_api" %}', {
+        method: 'GET',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('🔄 Respuesta de sincronización:', data);
+        if (data.success) {
+          attendanceStatus = data.status;
+          currentState = attendanceStatus.status;
+          console.log('✅ Estado sincronizado:', currentState);
+          
+          // Guardar en localStorage
+          if (currentState !== 'out') {
+            saveStateToLocalStorage(currentState, attendanceStatus);
+          } else {
+            localStorage.removeItem('attendanceState');
+          }
+          
+          // Actualizar UI
+          updateUI();
+          updateTodaySummary();
+        }
+      })
+      .catch(error => {
+        console.error('❌ Error en sincronización:', error);
+      });
+    }
+    
+    // INICIALIZACIÓN: Determinar estado correcto
+    determineCorrectState();
+    
+    // Debug inicial expandido
+    console.log('=== INICIALIZACIÓN DEL SISTEMA ===');
+    console.log('Datos completos del backend:', attendanceStatus);
+    console.log('Estado inicial determinado:', currentState);
+    console.log('¿Puede registrar entrada?:', attendanceStatus?.can_register_entry);
+    console.log('¿Puede registrar salida?:', attendanceStatus?.can_register_exit);
+    
+    // Variables para paginación y filtros
+    let allRecords = [];
+    let filteredRecords = [];
+    let currentPage = 1;
+    let recordsPerPage = 10;
+    let showAllRecords = false;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function () {
+      updateDateTime();
+      setInterval(updateDateTime, 1000);
+      initializeFromBackend();
+      updateHistoryDisplay();
+      
+      // CORREGIDO: Solo sincronizar si hay duda sobre el estado
+      // No llamar automáticamente si el backend ya dio un estado válido
+      setTimeout(() => {
+        if (currentState === 'in' && (!attendanceStatus.entry_time || attendanceStatus.hours_worked === undefined)) {
+          console.log('⚠️ Estado IN pero datos incompletos, sincronizando...');
+          updateStatusFromServer();
+        }
+      }, 1000);
+    });
+    
+    // Detectar cuando el usuario vuelve a la pestaña para sincronizar
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden && currentState === 'in') {
+        // Usuario regresó a la pestaña y tiene jornada activa, sincronizar
+        console.log('👁️ Usuario regresó, sincronizando estado...');
+        updateStatusFromServer();
+      }
+    });
+
+    // Initialize from backend data
+    function initializeFromBackend() {
+      // CORREGIDO: Sincronizar currentState con los datos del backend
+      if (attendanceStatus && attendanceStatus.status) {
+        currentState = attendanceStatus.status;
+        console.log('Estado sincronizado desde backend:', currentState);
+      }
+      
+      updateUI();
+      updateTodaySummary(); // Actualizar el resumen del día
+      
+      if (attendanceStatus.status === 'in') {
+        // Si está en progreso, iniciar actualización periódica desde el servidor
+        startServerTimer();
+      } else if (attendanceStatus.status === 'completed') {
+        // Si ya completó, mostrar las horas finales
+        updateTodaySummary();
+      }
+      
+      console.log('Inicialización completada. Estado final:', currentState);
+    }
+
+    // Update date and time
+    function updateDateTime() {
+      const now = new Date();
+      const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('currentDate').textContent = now.toLocaleDateString('es-ES', dateOptions);
+      document.getElementById('currentTime').textContent = now.toLocaleTimeString('es-ES');
+    }
+
+    // Toggle attendance - Nueva implementación con backend
+    function toggleAttendance() {
+      const actionButton = document.getElementById('actionButton');
+      const buttonText = document.getElementById('buttonText');
+      
+      console.log('=== INICIO DE ACCIÓN DE ASISTENCIA ===');
+      console.log('Estado actual antes de acción:', currentState);
+      console.log('Datos de asistencia completos:', attendanceStatus);
+      console.log('¿Puede registrar entrada?:', attendanceStatus?.can_register_entry);
+      console.log('¿Puede registrar salida?:', attendanceStatus?.can_register_exit);
+      
+      // Determinar la acción basada en el estado actual
+      let action;
+      if (currentState === 'out') {
+        action = 'entry';
+        console.log('Estado OUT detectado → Acción: ENTRADA');
+      } else if (currentState === 'in') {
+        action = 'exit';
+        console.log('Estado IN detectado → Acción: SALIDA');
+      } else {
+        console.error('Estado no válido detectado:', currentState);
+        console.error('Datos de attendanceStatus:', attendanceStatus);
+        return;
+      }
+      
+      console.log('Acción final determinada:', action);
+      
+      // Deshabilitar botón y mostrar loading
+      actionButton.disabled = true;
+      buttonText.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Procesando...';
+      
+      // Crear FormData para enviar
+      const formData = new FormData();
+      formData.append('action', action);
+      formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+      
+      console.log('Enviando al backend - Acción:', action);
+      
+      // Enviar petición al backend
+      fetch('{% url "control_asistencia" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('=== RESPUESTA DEL BACKEND ===');
+        console.log('Respuesta completa del servidor:', data);
+        
+        if (data.success) {
+          console.log('✅ Acción exitosa en el backend');
+          
+          // Actualizar estado local
+          if (action === 'entry') {
+            console.log('Actualizando estado local después de ENTRADA');
+            currentState = 'in';
+            attendanceStatus.entry_time = data.entry_time;
+            attendanceStatus.status = 'in';
+            attendanceStatus.message = `Jornada iniciada a las ${data.entry_time}`;  // CORREGIDO: Actualizar mensaje
+            attendanceStatus.hours_worked = 0; // Inicializar
+            attendanceStatus.can_register_entry = false;
+            attendanceStatus.can_register_exit = true;
+            
+            // NUEVO: Guardar estado en localStorage Y cookies
+            saveStateToLocalStorage(currentState, attendanceStatus);
+            
+            startServerTimer(); // Iniciar actualizaciones desde servidor
+            console.log('Nuevo estado después de entrada:', currentState);
+          } else if (action === 'exit') {
+            console.log('Actualizando estado local después de SALIDA');
+            currentState = 'completed'; // CORREGIDO: debe ser 'completed', no 'out'
+            attendanceStatus.exit_time = data.exit_time;
+            attendanceStatus.hours_worked = data.hours_worked;
+            attendanceStatus.status = 'completed';
+            attendanceStatus.message = `Jornada completada (${data.hours_worked} horas)`;  // CORREGIDO: Actualizar mensaje
+            attendanceStatus.can_register_entry = false;
+            attendanceStatus.can_register_exit = false;
+            
+            // NUEVO: Guardar estado en localStorage Y cookies
+            saveStateToLocalStorage(currentState, attendanceStatus);
+            
+            // Detener timer del servidor
+            if (window.timerInterval) {
+              clearInterval(window.timerInterval);
+            }
+            console.log('Nuevo estado después de salida:', currentState);
+          }
+          
+          console.log('Estado final actualizado:', currentState);
+          console.log('AttendanceStatus actualizado:', attendanceStatus);
+          
+          // FORZAR actualización inmediata del botón
+          console.log('🔄 Forzando actualización inmediata de UI...');
+          updateUI();
+          updateTodaySummary(); // Actualizar el resumen con los nuevos datos
+          
+          // Verificar que el botón se actualizó correctamente
+          setTimeout(() => {
+            console.log('🔍 Verificando estado después de UI update:');
+            console.log('CurrentState:', currentState);
+            console.log('AttendanceStatus:', attendanceStatus);
+          }, 100);
+          
+          // Mostrar notificación apropiada
+          showBackendNotification(data);
+          
+          // Refrescar historial desde el servidor
+          refreshHistoryFromServer();
+          
+        } else {
+          console.error('❌ Error en el backend:', data.message);
+          // Mostrar error
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: data.message,
+            confirmButtonColor: '#dc2626'
+          });
+        }
+      })
+      .catch(error => {
+        console.error('❌ Error de conexión:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error de conexión',
+          text: 'No se pudo procesar la solicitud. Inténtalo de nuevo.',
+          confirmButtonColor: '#dc2626'
+        });
+      })
+      .finally(() => {
+        // Restaurar botón
+        actionButton.disabled = false;
+        updateButtonText(); // IMPORTANTE: Actualizar texto del botón
+        
+        console.log('=== FIN DE ACCIÓN ===');
+        console.log('Estado final después de la acción:', currentState);
+        console.log('=====================================');
+      });
+    }    // Show backend notification with SweetAlert
+    function showBackendNotification(data) {
+      let icon = 'success';
+      let title = '¡Registro exitoso!';
+      let confirmButtonColor = '#059669';
+      
+      if (data.notification_type === 'warning') {
+        icon = 'warning';
+        title = 'Registro fuera de horario';
+        confirmButtonColor = '#d97706';
+      } else if (data.notification_type === 'error') {
+        icon = 'error';
+        title = 'Error en registro';
+        confirmButtonColor = '#dc2626';
+      }
+      
+      let message = data.message;
+      if (data.outside_schedule && data.schedule_message) {
+        message += '\\n\\n' + data.schedule_message;
+      }
+      
+      // Agregar información adicional si es salida
+      if (data.hours_worked) {
+        message += `\\n\\nHoras trabajadas: ${data.hours_worked} horas`;
+      }
+      
+      Swal.fire({
+        icon: icon,
+        title: title,
+        text: message,
+        confirmButtonColor: confirmButtonColor,
+        confirmButtonText: 'Entendido'
+      });
+    }
+
+    // Update UI based on current state
+    function updateUI() {
+      console.log('🎨 === ACTUALIZANDO UI ===');
+      console.log('Estado para UI:', currentState);
+      console.log('AttendanceStatus:', attendanceStatus);
+      
+      const statusIcon = document.getElementById('statusIcon');
+      const statusText = document.getElementById('statusText');
+      const statusTime = document.getElementById('statusTime');
+      
+      if (currentState === 'in') {
+        console.log('🟢 Configurando UI para estado IN (jornada en curso)');
+        statusIcon.className = 'inline-flex items-center justify-center w-24 h-24 rounded-full bg-green-100 mb-4 transition-all duration-300 pulse-animation';
+        statusIcon.innerHTML = '<i class="fas fa-user-check text-4xl text-green-600"></i>';
+        statusText.textContent = 'Jornada en curso';
+        if (attendanceStatus.entry_time) {
+          statusTime.textContent = `Entrada: ${attendanceStatus.entry_time}`;
+        }
+      } else if (currentState === 'completed') {
+        console.log('🔵 Configurando UI para estado COMPLETED');
+        statusIcon.className = 'inline-flex items-center justify-center w-24 h-24 rounded-full bg-blue-100 mb-4 transition-all duration-300';
+        statusIcon.innerHTML = '<i class="fas fa-check-circle text-4xl text-blue-600"></i>';
+        statusText.textContent = attendanceStatus.message || 'Jornada completada';
+        if (attendanceStatus.hours_worked) {
+          statusTime.textContent = `Horas trabajadas: ${attendanceStatus.hours_worked}`;
+        }
+      } else {
+        console.log('⚪ Configurando UI para estado OUT (sin jornada)');
+        statusIcon.className = 'inline-flex items-center justify-center w-24 h-24 rounded-full bg-gray-100 mb-4 transition-all duration-300';
+        statusIcon.innerHTML = '<i class="fas fa-user-clock text-4xl text-gray-400"></i>';
+        statusText.textContent = attendanceStatus.message || 'No has iniciado tu jornada';
+        statusTime.textContent = '';
+      }
+      
+      console.log('🎨 Llamando updateButtonText()...');
+      updateButtonText();
+      console.log('🎨 === FIN ACTUALIZACIÓN UI ===');
+    }
+
+    // Update button text and state
+    function updateButtonText() {
+      const actionButton = document.getElementById('actionButton');
+      const buttonText = document.getElementById('buttonText');
+      
+      console.log('=== ACTUALIZANDO BOTÓN ===');
+      console.log('Estado actual para botón:', currentState);
+      
+      if (currentState === 'in') {
+        actionButton.className = 'px-8 py-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transform hover:scale-105 transition-all duration-200 shadow-lg';
+        actionButton.innerHTML = '<i class="fas fa-sign-out-alt mr-2"></i><span id="buttonText">Marcar Salida</span>';
+        actionButton.disabled = false;
+        console.log('✅ Botón configurado para SALIDA');
+      } else if (currentState === 'completed') {
+        actionButton.className = 'px-8 py-4 bg-gray-400 text-white font-semibold rounded-lg cursor-not-allowed';
+        actionButton.innerHTML = '<i class="fas fa-check mr-2"></i><span id="buttonText">Jornada Completada</span>';
+        actionButton.disabled = true;
+        console.log('✅ Botón configurado para COMPLETADO');
+      } else {
+        actionButton.className = 'px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg';
+        actionButton.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i><span id="buttonText">Marcar Entrada</span>';
+        actionButton.disabled = false;
+        console.log('✅ Botón configurado para ENTRADA');
+      }
+      console.log('========================');
+    }
+
+    // Iniciar timer que obtiene datos desde el servidor
+    function startServerTimer() {
+      // Limpiar timer anterior si existe
+      if (window.timerInterval) {
+        clearInterval(window.timerInterval);
+      }
+      
+      // Actualizar inmediatamente
+      updateStatusFromServer();
+      
+      // Configurar actualización cada 30 segundos desde el servidor
+      window.timerInterval = setInterval(updateStatusFromServer, 30000);
+    }
+    
+    // Obtener estado actual desde el servidor
+    function updateStatusFromServer() {
+      fetch('{% url "current_status_api" %}', {
+        method: 'GET',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Actualizar datos de estado
+          attendanceStatus = data.status;
+          currentState = attendanceStatus.status;
+          
+          console.log('Estado actualizado desde servidor:', currentState); // Debug
+          
+          // Actualizar UI completa con nuevos datos del servidor
+          updateTodaySummary();
+          updateStatusDisplay();
+          updateUI(); // AGREGADO: Actualizar también los botones
+        } else {
+          console.log('Error al obtener estado:', data.message);
+        }
+      })
+      .catch(error => {
+        console.log('Error al conectar con servidor:', error);
+      });
+    }
+    
+    // Nueva función para actualizar solo el display de estado (sin cambiar botones)
+    function updateStatusDisplay() {
+      const statusText = document.getElementById('statusText');
+      const statusTime = document.getElementById('statusTime');
+      
+      if (statusText && attendanceStatus.message) {
+        statusText.textContent = attendanceStatus.message;
+      }
+      
+      if (statusTime) {
+        if (attendanceStatus.status === 'in' && attendanceStatus.hours_worked_display) {
+          statusTime.textContent = `Tiempo trabajado: ${attendanceStatus.hours_worked_display}`;
+        } else if (attendanceStatus.status === 'completed' && attendanceStatus.hours_worked) {
+          statusTime.textContent = `Horas trabajadas: ${attendanceStatus.hours_worked}`;
+        }
+      }
+    }
+
+    // Update today's summary - Usa datos del servidor en tiempo real
+    function updateTodaySummary() {
+      // Actualizar entrada
+      if (attendanceStatus.entry_time) {
+        const todayEntryElement = document.getElementById('todayEntry');
+        if (todayEntryElement) {
+          todayEntryElement.textContent = attendanceStatus.entry_time;
+        }
+      }
+      
+      // Actualizar salida
+      if (attendanceStatus.exit_time) {
+        const todayExitElement = document.getElementById('todayExit');
+        if (todayExitElement) {
+          todayExitElement.textContent = attendanceStatus.exit_time;
+        }
+      } else {
+        // Si no hay salida, mostrar --:--
+        const todayExitElement = document.getElementById('todayExit');
+        if (todayExitElement) {
+          todayExitElement.textContent = '--:--';
+        }
+      }
+      
+      // Actualizar horas trabajadas usando SIEMPRE datos del servidor
+      const hoursWorkedElement = document.getElementById('hoursWorked');
+      if (hoursWorkedElement) {
+        if (attendanceStatus.hours_worked_display) {
+          // Si hay display formateado, usarlo
+          hoursWorkedElement.textContent = attendanceStatus.hours_worked_display;
+        } else if (attendanceStatus.hours_worked) {
+          // Si solo hay número, formatear
+          const hours = Math.floor(attendanceStatus.hours_worked);
+          const minutes = Math.round((attendanceStatus.hours_worked - hours) * 60);
+          hoursWorkedElement.textContent = `${hours}h ${minutes}m`;
+        } else {
+          // Sin datos
+          hoursWorkedElement.textContent = '0h 0m';
+        }
+      }
+    }
+
+    // Update history display - Versión mejorada con paginación y filtros
+    function updateHistoryDisplay() {
+      const historyList = document.getElementById('historyList');
+      const emptyHistory = document.getElementById('emptyHistory');
+      const totalRecordsElement = document.getElementById('totalRecords');
+
+      if (!historyList || !emptyHistory) return;
+
+      // Inicializar datos si no existen
+      if (allRecords.length === 0 && attendanceHistory.success) {
+        allRecords = attendanceHistory.history || [];
+        filteredRecords = [...allRecords];
+        
+        // Configurar event listeners para filtros
+        setupFilterListeners();
+      }
+
+      // Mostrar total de registros
+      if (totalRecordsElement) {
+        totalRecordsElement.textContent = `${filteredRecords.length} registro(s) total`;
+      }
+
+      if (filteredRecords.length === 0) {
+        historyList.innerHTML = '';
+        emptyHistory.innerHTML = '<p class="text-gray-500 text-center">No hay registros que coincidan con los filtros</p>';
+        emptyHistory.style.display = 'block';
+        document.getElementById('paginationContainer').innerHTML = '';
+        return;
+      }
+
+      emptyHistory.style.display = 'none';
+      
+      // Calcular registros a mostrar
+      let recordsToShow;
+      if (showAllRecords) {
+        recordsToShow = filteredRecords;
+      } else {
+        const startIndex = (currentPage - 1) * recordsPerPage;
+        const endIndex = startIndex + recordsPerPage;
+        recordsToShow = filteredRecords.slice(startIndex, endIndex);
+      }
+      
+      // Generar HTML para cada registro
+      historyList.innerHTML = recordsToShow.map((record, index) => {
+        const entryTime = record.entry_time || '--:--';
+        const exitTime = record.exit_time || '--:--';
+        const hoursWorked = record.hours_worked > 0 ? 
+          `${Math.floor(record.hours_worked)}h ${Math.round((record.hours_worked - Math.floor(record.hours_worked)) * 60)}m` : '--';
+        
+        // Determinar icono y color según estado
+        let statusIcon = 'fas fa-calendar-day text-gray-600';
+        let statusColor = 'bg-gray-50 hover:bg-gray-100';
+        let statusText = 'Registro';
+        
+        if (record.status === 'completed') {
+          statusIcon = 'fas fa-check-circle text-green-600';
+          statusColor = 'bg-green-50 hover:bg-green-100';
+          statusText = 'Completo';
+        } else if (record.status === 'in_progress') {
+          statusIcon = 'fas fa-clock text-blue-600';
+          statusColor = 'bg-blue-50 hover:bg-blue-100';
+          statusText = 'En curso';
+        } else if (record.status === 'incomplete') {
+          statusIcon = 'fas fa-exclamation-triangle text-yellow-600';
+          statusColor = 'bg-yellow-50 hover:bg-yellow-100';
+          statusText = 'Sin salida';
+        }
+
+        return `
+          <div class="flex items-center justify-between p-4 ${statusColor} rounded-lg transition-all duration-300 slide-in history-card border border-gray-200">
+            <div class="flex items-center space-x-4">
+              <div class="bg-white p-3 rounded-lg shadow-sm border">
+                <i class="${statusIcon}"></i>
+              </div>
+              <div>
+                <div class="flex items-center space-x-3">
+                  <p class="font-medium text-gray-900">${record.day_name} ${record.day_number} de ${record.month_name}</p>
+                  <span class="status-badge ${getStatusBadgeClass(record.status)}">${statusText}</span>
+                </div>
+                <div class="flex items-center space-x-4 text-sm text-gray-600 mt-2">
+                  <span class="flex items-center">
+                    <i class="fas fa-sign-in-alt text-green-600 mr-1"></i> 
+                    <strong>Entrada:</strong> ${entryTime}
+                  </span>
+                  <span class="flex items-center">
+                    <i class="fas fa-sign-out-alt text-red-600 mr-1"></i> 
+                    <strong>Salida:</strong> ${exitTime}
+                  </span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">${record.date}</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <p class="text-sm text-gray-600">Horas trabajadas</p>
+              <p class="font-bold text-lg text-gray-900 timer">${hoursWorked}</p>
+              ${record.status === 'in_progress' ? '<p class="text-xs text-blue-600 mt-1">Actualizando...</p>' : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      // Actualizar paginación
+      if (!showAllRecords) {
+        updatePagination();
+      } else {
+        document.getElementById('paginationContainer').innerHTML = '';
+      }
+    }
+    
+    // Función auxiliar para obtener clases CSS del badge de estado
+    function getStatusBadgeClass(status) {
+      switch(status) {
+        case 'completed':
+          return 'bg-green-100 text-green-800';
+        case 'in_progress':
+          return 'bg-blue-100 text-blue-800';
+        case 'incomplete':
+          return 'bg-yellow-100 text-yellow-800';
+        default:
+          return 'bg-gray-100 text-gray-800';
+      }
+    }
+    
+    // Configurar listeners para filtros
+    function setupFilterListeners() {
+      const searchInput = document.getElementById('searchHistory');
+      const statusFilter = document.getElementById('statusFilter');
+      
+      if (searchInput) {
+        searchInput.addEventListener('input', applyFilters);
+      }
+      
+      if (statusFilter) {
+        statusFilter.addEventListener('change', applyFilters);
+      }
+    }
+    
+    // Aplicar filtros
+    function applyFilters() {
+      const searchTerm = document.getElementById('searchHistory')?.value.toLowerCase() || '';
+      const statusFilter = document.getElementById('statusFilter')?.value || '';
+      
+      filteredRecords = allRecords.filter(record => {
+        // Filtro de búsqueda por fecha
+        const matchesSearch = !searchTerm || 
+          record.date.toLowerCase().includes(searchTerm) ||
+          `${record.day_name} ${record.day_number} de ${record.month_name}`.toLowerCase().includes(searchTerm);
+        
+        // Filtro de estado
+        const matchesStatus = !statusFilter || record.status === statusFilter;
+        
+        return matchesSearch && matchesStatus;
+      });
+      
+      currentPage = 1; // Resetear página al filtrar
+      updateHistoryDisplay();
+    }
+    
+    // Alternar vista completa/paginada
+    function toggleHistoryView() {
+      showAllRecords = !showAllRecords;
+      const toggleBtn = document.getElementById('toggleViewBtn');
+      
+      if (showAllRecords) {
+        toggleBtn.textContent = 'Ver paginado';
+        toggleBtn.className = 'text-sm bg-gray-100 text-gray-800 px-3 py-1 rounded-full hover:bg-gray-200 transition-colors';
+      } else {
+        toggleBtn.textContent = 'Ver todos';
+        toggleBtn.className = 'text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full hover:bg-blue-200 transition-colors';
+      }
+      
+      currentPage = 1;
+      updateHistoryDisplay();
+    }
+    
+    // Actualizar paginación
+    function updatePagination() {
+      const paginationContainer = document.getElementById('paginationContainer');
+      if (!paginationContainer || showAllRecords) return;
+      
+      const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
+      
+      if (totalPages <= 1) {
+        paginationContainer.innerHTML = '';
+        return;
+      }
+      
+      let paginationHTML = '';
+      
+      // Botón anterior
+      if (currentPage > 1) {
+        paginationHTML += `
+          <button onclick="changePage(${currentPage - 1})" 
+            class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+        `;
+      }
+      
+      // Números de página
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, currentPage + 2);
+      
+      for (let i = startPage; i <= endPage; i++) {
+        const isActive = i === currentPage;
+        paginationHTML += `
+          <button onclick="changePage(${i})" 
+            class="px-3 py-2 text-sm border rounded-lg transition-colors ${
+              isActive 
+                ? 'bg-blue-600 text-white border-blue-600' 
+                : 'bg-white border-gray-300 hover:bg-gray-50'
+            }">
+            ${i}
+          </button>
+        `;
+      }
+      
+      // Botón siguiente
+      if (currentPage < totalPages) {
+        paginationHTML += `
+          <button onclick="changePage(${currentPage + 1})" 
+            class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        `;
+      }
+      
+      paginationContainer.innerHTML = `
+        <div class="flex items-center space-x-1">
+          ${paginationHTML}
+        </div>
+        <div class="text-sm text-gray-600 ml-4">
+          Página ${currentPage} de ${totalPages} (${filteredRecords.length} registros)
+        </div>
+      `;
+    }
+    
+    // Cambiar página
+    function changePage(page) {
+      currentPage = page;
+      updateHistoryDisplay();
+    }
+    
+    // Refrescar historial desde el servidor
+    function refreshHistoryFromServer() {
+      const refreshBtn = document.getElementById('refreshBtn');
+      const originalContent = refreshBtn.innerHTML;
+      
+      // Mostrar indicador de carga
+      refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Actualizando...';
+      refreshBtn.disabled = true;
+      refreshBtn.className = 'text-sm bg-gray-100 text-gray-600 px-3 py-1 rounded-full cursor-not-allowed flex items-center';
+      
+      // Usar el nuevo endpoint específico para historial
+      fetch('{% url "attendance_history_api" %}', {
+        method: 'GET',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Actualizar datos del historial
+          attendanceHistory = data;
+          allRecords = attendanceHistory.history || [];
+          filteredRecords = [...allRecords];
+          applyFilters(); // Reaplicar filtros actuales y actualizar display
+          
+          // Mostrar mensaje de éxito temporal
+          refreshBtn.innerHTML = '<i class="fas fa-check mr-1"></i>Actualizado';
+          refreshBtn.className = 'text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full flex items-center';
+        } else {
+          console.log('Error al obtener historial:', data.message);
+          updateHistoryDisplay(); // Fallback con datos actuales
+          
+          // Mostrar mensaje de error
+          refreshBtn.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i>Error';
+          refreshBtn.className = 'text-sm bg-red-100 text-red-800 px-3 py-1 rounded-full flex items-center';
+        }
+      })
+      .catch(error => {
+        console.log('Error al refrescar historial:', error);
+        updateHistoryDisplay(); // Fallback con datos actuales
+        
+        // Mostrar mensaje de error
+        refreshBtn.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i>Error';
+        refreshBtn.className = 'text-sm bg-red-100 text-red-800 px-3 py-1 rounded-full flex items-center';
+      })
+      .finally(() => {
+        // Restaurar botón después de 2 segundos
+        setTimeout(() => {
+          refreshBtn.innerHTML = originalContent;
+          refreshBtn.disabled = false;
+          refreshBtn.className = 'text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full hover:bg-green-200 transition-colors flex items-center';
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+
+</html>

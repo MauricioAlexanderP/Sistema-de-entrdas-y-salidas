@@ -1,0 +1,17 @@
+# Django Framework
+Django==5.2.5
+
+# Database connector for MySQL
+mysqlclient==2.2.7
+
+# Timezone handling
+pytz==2025.2
+
+# ASGI reference implementation
+asgiref==3.9.1
+
+# SQL parsing library
+sqlparse==0.5.3
+
+# Timezone data
+tzdata==2025.2
