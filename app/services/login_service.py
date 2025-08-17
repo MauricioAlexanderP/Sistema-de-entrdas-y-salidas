@@ -1,7 +1,6 @@
 from django.shortcuts import redirect
 from django.http import JsonResponse
 from app.models import User
-import hashlib
 
 
 class LoginService:
@@ -43,44 +42,19 @@ class LoginService:
         if request.method == "POST":
             email = request.POST.get("email")
             password = request.POST.get("password")
-
-            if not email or not password:
-                # Si es una petición AJAX, devolver JSON
-                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-                    return JsonResponse(
-                        {
-                            "success": False,
-                            "message": "Email y contraseña son requeridos",
-                        }
-                    )
-                # Si no es AJAX, renderizar la página con error
-                return JsonResponse(
-                    {"success": False, "message": "Email y contraseña son requeridos"}
-                )
-
-            # Validar usuario
             validation_result = LoginService.validate_user(email, password)
-
             if validation_result["success"]:
-                # Guardar información del usuario en la sesión
-                request.session["user_id"] = validation_result["user"].id
-                request.session["user_name"] = validation_result["user"].name
-                request.session["user_email"] = validation_result["user"].email
+                user = validation_result["user"]
+                request.session["user_id"] = user.id
+                request.session["user_name"] = user.name
+                request.session["user_email"] = user.email
                 request.session["is_logged_in"] = True
-
-                # Redireccionar a controlAsistencia.html
-                return redirect("control_asistencia")
+                if user.email.endswith("@admin.com"):
+                    return redirect("dashboard")
+                else:
+                    return redirect("control_asistencia")
             else:
-                # Si es una petición AJAX, devolver JSON
-                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-                    return JsonResponse(
-                        {"success": False, "message": validation_result["message"]}
-                    )
-                # Si no es AJAX, podrías renderizar la página con error
-                return JsonResponse(
-                    {"success": False, "message": validation_result["message"]}
-                )
-
+                return JsonResponse({"success": False, "message": validation_result["message"]})
         return JsonResponse({"success": False, "message": "Método no permitido"})
 
     @staticmethod
@@ -95,7 +69,7 @@ class LoginService:
     def get_current_user(request):
         """
         Obtiene la información del usuario actual desde la sesión
-        Returns: dict con información del usuario o None
+        Returns: dict con información del usuario o vacío
         """
         if LoginService.is_user_authenticated(request):
             return {
@@ -103,7 +77,7 @@ class LoginService:
                 "name": request.session.get("user_name"),
                 "email": request.session.get("user_email"),
             }
-        return None
+        return {}
 
     @staticmethod
     def logout_user(request):
@@ -112,11 +86,3 @@ class LoginService:
         """
         request.session.flush()
         return redirect("index")
-
-    @staticmethod
-    def hash_password(password):
-        """
-        Hash de contraseña usando SHA256 (para uso futuro)
-        Returns: string con hash de la contraseña
-        """
-        return hashlib.sha256(password.encode()).hexdigest()
