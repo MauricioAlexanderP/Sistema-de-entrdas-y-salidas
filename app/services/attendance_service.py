@@ -17,10 +17,11 @@ class AttendanceService:
         """
         Obtiene la hora actual en la zona horaria configurada de Django
         """
-        # timezone.now() devuelve UTC, lo convertimos a la zona local configurada
+        # Asegurar que siempre use la fecha local correctamente
         utc_time = timezone.now()
         local_tz = pytz.timezone(settings.TIME_ZONE)
-        return utc_time.astimezone(local_tz)
+        local_time = utc_time.astimezone(local_tz)
+        return local_time
 
     @staticmethod
     def format_time_local(datetime_obj):

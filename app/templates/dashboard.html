@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,17 +10,29 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @keyframes slideIn {
-            from { transform: translateY(10px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from {
+                transform: translateY(10px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
-        .slide-in { animation: slideIn 0.3s ease-out; }
-        
+
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
         .sidebar-item {
             transition: all 0.2s ease;
         }
+
         .sidebar-item:hover {
             transform: translateX(5px);
         }
+
         .sidebar-item.active {
             background-color: rgba(37, 99, 235, 0.1);
             border-left: 4px solid #2563eb;
@@ -31,26 +44,26 @@
             width: 100%;
             min-height: 250px;
         }
-        
+
         /* Responsive adjustments for charts */
         @media (max-width: 768px) {
             .chart-container {
                 min-height: 200px;
             }
         }
-        
+
         /* Prevent canvas overflow */
         canvas {
             max-width: 100% !important;
             height: auto !important;
         }
-        
+
         /* Table responsive wrapper */
         .table-wrapper {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
-        
+
         /* Sidebar responsiveness */
         @media (max-width: 1024px) {
             aside {
@@ -58,27 +71,27 @@
                 position: relative;
                 height: auto;
             }
-            
+
             .flex {
                 flex-direction: column;
             }
-            
+
             main {
                 padding: 1rem;
             }
         }
-        
+
         /* Grid responsiveness */
         @media (max-width: 640px) {
             .grid {
                 grid-template-columns: 1fr !important;
             }
-            
+
             .px-6 {
                 padding-left: 1rem;
                 padding-right: 1rem;
             }
-            
+
             .py-6 {
                 padding-top: 1rem;
                 padding-bottom: 1rem;
@@ -86,6 +99,7 @@
         }
     </style>
 </head>
+
 <body class="bg-gray-50 min-h-screen">
     <!-- Header -->
     <header class="bg-white shadow-sm border-b border-gray-200">
@@ -112,11 +126,13 @@
         <!-- Sidebar -->
         <aside class="w-64 bg-white shadow-md h-[calc(100vh-4rem)] sticky top-16">
             <nav class="mt-6 px-2">
-                <a href="control_asistencia" onclick="showView('attendance')" id="attendanceLink" class="sidebar-item group flex items-center px-4 py-3 text-base font-medium rounded-md text-gray-700 hover:bg-gray-50 mb-1">
+                <a href="/control-asistencia/" onclick="showView('attendance')" id="attendanceLink"
+                    class="sidebar-item group flex items-center px-4 py-3 text-base font-medium rounded-md text-gray-700 hover:bg-gray-50 mb-1">
                     <i class="fas fa-sign-in-alt mr-3 text-gray-500 group-hover:text-blue-600"></i>
                     Marcar Ingreso
                 </a>
-                <a href="dashboard" onclick="showView('dashboard')" id="dashboardLink" class="sidebar-item group flex items-center px-4 py-3 text-base font-medium rounded-md text-gray-700 hover:bg-gray-50 mb-1 active">
+                <a href="dashboard" onclick="showView('dashboard')" id="dashboardLink"
+                    class="sidebar-item group flex items-center px-4 py-3 text-base font-medium rounded-md text-gray-700 hover:bg-gray-50 mb-1 active">
                     <i class="fas fa-chart-line mr-3 text-gray-500 group-hover:text-blue-600"></i>
                     Dashboard
                 </a>
@@ -146,7 +162,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
                         <div class="flex items-center justify-between">
                             <div>
@@ -159,7 +175,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
                         <div class="flex items-center justify-between">
                             <div>
@@ -172,7 +188,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
                         <div class="flex items-center justify-between">
                             <div>
@@ -187,34 +203,32 @@
                     </div>
                 </div>
 
-                <!-- Filters Section -->
+                <!-- Daily Filter Section - ÚNICA versión -->
                 <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Filtros</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label for="dateFrom" class="block text-sm font-medium text-gray-700 mb-1">Desde</label>
-                            <input type="date" id="dateFrom" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Filtro de Reporte Diario</h3>
+                    <div class="flex flex-col md:flex-row items-end gap-4">
+                        <div class="flex-1">
+                            <label for="filterDate" class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                            <input type="date" id="filterDate" name="date"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
-                        <div>
-                            <label for="dateTo" class="block text-sm font-medium text-gray-700 mb-1">Hasta</label>
-                            <input type="date" id="dateTo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="flex gap-2">
+                            <button onclick="filterByToday()"
+                                class="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors">
+                                <i class="fas fa-calendar-day mr-2"></i>
+                                Hoy
+                            </button>
+                            <button onclick="applyDateFilter()"
+                                class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-search mr-2"></i>
+                                Buscar
+                            </button>
+                            <button onclick="clearDateFilter()"
+                                class="px-4 py-2 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors">
+                                <i class="fas fa-times mr-2"></i>
+                                Limpiar
+                            </button>
                         </div>
-                        <div>
-                            <label for="employee" class="block text-sm font-medium text-gray-700 mb-1">Empleado</label>
-                            <select id="employee" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="">Todos los empleados</option>
-                                <option value="1">Juan Pérez</option>
-                                <option value="2">María García</option>
-                                <option value="3">Carlos López</option>
-                                <option value="4">Ana Martínez</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="mt-4 flex justify-end">
-                        <button onclick="applyFilters()" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
-                            <i class="fas fa-filter mr-2"></i>
-                            Aplicar Filtros
-                        </button>
                     </div>
                 </div>
 
@@ -227,7 +241,7 @@
                             <canvas id="attendanceChart"></canvas>
                         </div>
                     </div>
-                    
+
                     <!-- Late Arrivals Chart -->
                     <div class="bg-white rounded-lg shadow-md p-4 lg:p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Llegadas Tarde por Empleado</h3>
@@ -239,7 +253,8 @@
 
                 <!-- Attendance Records Table -->
                 <div class="bg-white rounded-lg shadow-md mt-6 lg:mt-8 overflow-hidden">
-                    <div class="px-4 lg:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
+                    <div
+                        class="px-4 lg:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
                         <h3 class="text-lg font-semibold text-gray-900">Registros de Asistencia</h3>
                         <button class="text-sm text-blue-600 hover:text-blue-700 flex items-center">
                             <i class="fas fa-download mr-1"></i>
@@ -250,30 +265,114 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th scope="col" class="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empleado</th>
-                                    <th scope="col" class="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Fecha</th>
-                                    <th scope="col" class="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entrada</th>
-                                    <th scope="col" class="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Salida</th>
-                                    <th scope="col" class="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Horas</th>
-                                    <th scope="col" class="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                    <th scope="col"
+                                        class="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Empleado</th>
+                                    <th scope="col"
+                                        class="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                                        Fecha</th>
+                                    <th scope="col"
+                                        class="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Entrada</th>
+                                    <th scope="col"
+                                        class="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Salida</th>
+                                    <th scope="col"
+                                        class="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                                        Horas</th>
+                                    <th scope="col"
+                                        class="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Estado</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200" id="attendanceTableBody">
-                                <!-- Table rows will be inserted here -->
+                                {% for attendance in recent_attendances %}
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-3 lg:px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-8 w-8 lg:h-10 lg:w-10">
+                                                <div class="h-8 w-8 lg:h-10 lg:w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                    <span class="text-blue-800 font-medium text-xs lg:text-sm">{{ attendance.user.name|slice:":1" }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="ml-2 lg:ml-4">
+                                                <div class="text-sm font-medium text-gray-900">{{ attendance.user.name }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-3 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {{ attendance.entry_time|date:"Y-m-d" }}
+                                    </td>
+                                    <td class="px-3 lg:px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900">{{ attendance.entry_time|time:"H:i" }}</div>
+                                    </td>
+                                    <td class="px-3 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {% if attendance.exit_time %}
+                                            {{ attendance.exit_time|time:"H:i" }}
+                                        {% else %}
+                                            <span class="text-yellow-600">En curso</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-3 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
+                                        {% if attendance.exit_time %}
+                                            {% with duration=attendance.exit_time|timesince:attendance.entry_time %}
+                                                {{ duration }}
+                                            {% endwith %}
+                                        {% else %}
+                                            --
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-3 lg:px-6 py-4 whitespace-nowrap">
+                                        {% if attendance.exit_time %}
+                                            {% with entry_hour=attendance.entry_time|time:"H" entry_minute=attendance.entry_time|time:"i" %}
+                                                {% if entry_hour|add:0 > 8 or entry_hour|add:0 == 8 and entry_minute|add:0 > 30 %}
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                        Tardanza
+                                                    </span>
+                                                {% else %}
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                        A tiempo
+                                                    </span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% else %}
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                En curso
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                        <i class="fas fa-calendar-times text-2xl mb-2"></i>
+                                        <p>No hay registros de asistencia disponibles</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
-                    <div class="px-4 lg:px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
-                        <p class="text-sm text-gray-700">Mostrando <span class="font-medium">1</span> a <span class="font-medium">10</span> de <span class="font-medium">24</span> resultados</p>
+                    <div
+                        class="px-4 lg:px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
+                        <p class="text-sm text-gray-700">Mostrando <span class="font-medium">1</span> a <span
+                                class="font-medium">10</span> de <span class="font-medium">24</span> resultados</p>
                         <div class="flex flex-wrap gap-2">
-                            <button class="px-3 py-1 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50">Anterior</button>
-                            <button class="px-3 py-1 rounded-md border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">1</button>
-                            <button class="px-3 py-1 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50">2</button>
-                            <button class="px-3 py-1 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50">3</button>
-                            <button class="px-3 py-1 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50">Siguiente</button>
+                            <button
+                                class="px-3 py-1 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50">Anterior</button>
+                            <button
+                                class="px-3 py-1 rounded-md border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">1</button>
+                            <button
+                                class="px-3 py-1 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50">2</button>
+                            <button
+                                class="px-3 py-1 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50">3</button>
+                            <button
+                                class="px-3 py-1 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50">Siguiente</button>
                         </div>
                     </div>
                 </div>
+
+                
             </div>
 
             <!-- Attendance View -->
@@ -282,15 +381,18 @@
                 <div class="bg-white rounded-lg shadow-md p-6 mb-8">
                     <div class="text-center">
                         <div class="mb-4">
-                            <div id="statusIcon" class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gray-100 mb-4 transition-all duration-300">
+                            <div id="statusIcon"
+                                class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gray-100 mb-4 transition-all duration-300">
                                 <i class="fas fa-user-clock text-4xl text-gray-400"></i>
                             </div>
-                            <h2 id="statusText" class="text-2xl font-bold text-gray-900 mb-2">No has iniciado tu jornada</h2>
+                            <h2 id="statusText" class="text-2xl font-bold text-gray-900 mb-2">No has iniciado tu jornada
+                            </h2>
                             <p id="statusTime" class="text-gray-600"></p>
                         </div>
-                        
+
                         <!-- Action Button -->
-                        <button id="actionButton" onclick="toggleAttendance()" class="px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg">
+                        <button id="actionButton" onclick="toggleAttendance()"
+                            class="px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg">
                             <i class="fas fa-sign-in-alt mr-2"></i>
                             <span id="buttonText">Marcar Entrada</span>
                         </button>
@@ -310,7 +412,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="bg-white rounded-lg shadow-md p-6">
                         <div class="flex items-center justify-between">
                             <div>
@@ -322,7 +424,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="bg-white rounded-lg shadow-md p-6">
                         <div class="flex items-center justify-between">
                             <div>
@@ -356,7 +458,8 @@
     </div>
 
     <!-- Notification Toast -->
-    <div id="notification" class="fixed top-4 right-4 transform translate-x-full transition-transform duration-300 z-50">
+    <div id="notification"
+        class="fixed top-4 right-4 transform translate-x-full transition-transform duration-300 z-50">
         <div class="bg-white rounded-lg shadow-lg p-4 flex items-center space-x-3 min-w-[300px]">
             <div id="notificationIcon" class="flex-shrink-0"></div>
             <div>
@@ -367,6 +470,7 @@
     </div>
 
     <script>
+
         // State management
         let currentState = 'out'; // 'in' or 'out'
         let currentEntryTime = null;
@@ -375,22 +479,30 @@
         let charts = {}; // Store chart instances
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             updateDateTime();
             setInterval(updateDateTime, 1000);
             checkTodayStatus();
             updateHistoryDisplay();
             initializeCharts();
-            populateAttendanceTable();
             
-            // Set default dates for filters
+            // Handle date filter from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const dateParam = urlParams.get('date');
+            if (dateParam) {
+                document.getElementById('filterDate').value = dateParam;
+            } else {
+            // Set today's date as default using local timezone
             const today = new Date();
-            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-            document.getElementById('dateFrom').valueAsDate = firstDay;
-            document.getElementById('dateTo').valueAsDate = today;
-            
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const dateString = `${year}-${month}-${day}`;
+            document.getElementById('filterDate').value = dateString;
+            }
+
             // Handle window resize
-            window.addEventListener('resize', function() {
+            window.addEventListener('resize', function () {
                 Object.values(charts).forEach(chart => {
                     if (chart && typeof chart.resize === 'function') {
                         chart.resize();
@@ -413,7 +525,7 @@
             const attendanceView = document.getElementById('attendanceView');
             const dashboardLink = document.getElementById('dashboardLink');
             const attendanceLink = document.getElementById('attendanceLink');
-            
+
             if (view === 'dashboard') {
                 dashboardView.classList.remove('hidden');
                 attendanceView.classList.add('hidden');
@@ -430,7 +542,7 @@
         // Check today's status
         function checkTodayStatus() {
             const today = new Date().toDateString();
-            const todayRecord = attendanceHistory.find(record => 
+            const todayRecord = attendanceHistory.find(record =>
                 new Date(record.date).toDateString() === today
             );
 
@@ -448,7 +560,7 @@
         function toggleAttendance() {
             const now = new Date();
             const today = now.toDateString();
-            let todayRecord = attendanceHistory.find(record => 
+            let todayRecord = attendanceHistory.find(record =>
                 new Date(record.date).toDateString() === today
             );
 
@@ -456,7 +568,7 @@
                 // Mark entry
                 currentState = 'in';
                 currentEntryTime = now;
-                
+
                 if (!todayRecord) {
                     todayRecord = {
                         date: today,
@@ -468,20 +580,20 @@
                 } else {
                     todayRecord.entry = now.toISOString();
                 }
-                
+
                 showNotification('Entrada registrada', 'success');
                 startTimer();
             } else {
                 // Mark exit
                 currentState = 'out';
                 const exitTime = now;
-                
+
                 if (todayRecord) {
                     todayRecord.exit = exitTime.toISOString();
                     const hours = (exitTime - currentEntryTime) / (1000 * 60 * 60);
                     todayRecord.totalHours = hours;
                 }
-                
+
                 showNotification('Salida registrada', 'info');
                 clearInterval(window.timerInterval);
             }
@@ -604,7 +716,7 @@
             notificationTime.textContent = new Date().toLocaleTimeString('es-ES');
 
             notification.classList.remove('translate-x-full');
-            
+
             setTimeout(() => {
                 notification.classList.add('translate-x-full');
             }, 3000);
@@ -708,22 +820,22 @@
                                 font: {
                                     size: window.innerWidth < 768 ? 10 : 12
                                 },
-                                generateLabels: function(chart) {
+                                generateLabels: function (chart) {
                                     const original = Chart.defaults.plugins.legend.labels.generateLabels;
                                     const labels = original.call(this, chart);
-                                    
+
                                     labels.forEach((label, i) => {
                                         const value = chart.data.datasets[0].data[i];
                                         label.text = `${label.text}: ${value}`;
                                     });
-                                    
+
                                     return labels;
                                 }
                             }
                         },
                         tooltip: {
                             callbacks: {
-                                label: function(context) {
+                                label: function (context) {
                                     const label = context.label || '';
                                     const value = context.parsed;
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
@@ -737,73 +849,47 @@
             });
         }
 
-        // Populate attendance table
-        function populateAttendanceTable() {
-            const tableBody = document.getElementById('attendanceTableBody');
-            
-            // Sample data
-            const attendanceData = [
-                { employee: 'Juan Pérez', date: '2024-06-01', entry: '08:45', exit: '18:15', hours: '9h 30m', status: 'on-time' },
-                { employee: 'María García', date: '2024-06-01', entry: '09:15', exit: '18:20', hours: '9h 5m', status: 'late' },
-                { employee: 'Carlos López', date: '2024-06-01', entry: '08:30', exit: '17:45', hours: '9h 15m', status: 'on-time' },
-                { employee: 'Ana Martínez', date: '2024-06-01', entry: '08:55', exit: '18:30', hours: '9h 35m', status: 'on-time' },
-                { employee: 'Juan Pérez', date: '2024-06-02', entry: '08:50', exit: '18:10', hours: '9h 20m', status: 'on-time' },
-                { employee: 'María García', date: '2024-06-02', entry: '08:40', exit: '18:05', hours: '9h 25m', status: 'on-time' },
-                { employee: 'Carlos López', date: '2024-06-02', entry: '09:20', exit: '18:40', hours: '9h 20m', status: 'late' },
-                { employee: 'Ana Martínez', date: '2024-06-02', entry: '08:35', exit: '18:00', hours: '9h 25m', status: 'on-time' },
-                { employee: 'Juan Pérez', date: '2024-06-03', entry: '08:45', exit: '18:20', hours: '9h 35m', status: 'on-time' },
-                { employee: 'María García', date: '2024-06-03', entry: '08:30', exit: '17:50', hours: '9h 20m', status: 'on-time' }
-            ];
-            
-            tableBody.innerHTML = attendanceData.map(record => {
-                const statusClass = record.status === 'late' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
-                const statusText = record.status === 'late' ? 'Tardanza' : 'A tiempo';
-                const shortName = record.employee.split(' ').map(n => n.charAt(0)).join('');
-                
-                return `
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-3 lg:px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 h-8 w-8 lg:h-10 lg:w-10">
-                                    <div class="h-8 w-8 lg:h-10 lg:w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                        <span class="text-blue-800 font-medium text-xs lg:text-sm">${shortName}</span>
-                                    </div>
-                                </div>
-                                <div class="ml-2 lg:ml-4">
-                                    <div class="text-sm font-medium text-gray-900">${record.employee}</div>
-                                    <div class="text-xs text-gray-500 sm:hidden">${record.date}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-3 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">${record.date}</td>
-                        <td class="px-3 lg:px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">${record.entry}</div>
-                            <div class="text-xs text-gray-500 md:hidden">${record.hours}</div>
-                        </td>
-                        <td class="px-3 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.exit}</td>
-                        <td class="px-3 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">${record.hours}</td>
-                        <td class="px-3 lg:px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
-                                ${statusText}
-                            </span>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+        // Daily filter functions
+        function filterByToday() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const dateString = `${year}-${month}-${day}`;
+            document.getElementById('filterDate').value = dateString;
+            applyDateFilter();
         }
 
-        // Apply filters
-        function applyFilters() {
-            const dateFrom = document.getElementById('dateFrom').value;
-            const dateTo = document.getElementById('dateTo').value;
-            const employee = document.getElementById('employee').value;
-            
-            // In a real application, this would filter the data
-            showNotification('Filtros aplicados correctamente', 'success');
-            
-            // For demo purposes, we'll just show a notification
-            // In a real app, you would fetch filtered data from an API
+        function applyDateFilter() {
+            const selectedDate = document.getElementById('filterDate').value;
+            if (!selectedDate) {
+                showNotification('Por favor selecciona una fecha', 'error');
+                return;
+            }
+
+            // Ensure the date is in YYYY-MM-DD format before sending
+            const dateParts = selectedDate.split('-');
+            if (dateParts.length === 3) {
+                const year = dateParts[0];
+                const month = dateParts[1];
+                const day = dateParts[2];
+                const formattedDate = `${year}-${month}-${day}`;
+                
+                // Reload the page with the selected date filter
+                const url = new URL(window.location);
+                url.searchParams.set('date', formattedDate);
+                window.location.href = url.toString();
+            }
         }
+
+        function clearDateFilter() {
+            // Remove date parameter and reload
+            const url = new URL(window.location);
+            url.searchParams.delete('date');
+            window.location.href = url.toString();
+        }
+
     </script>
 </body>
+
 </html>

@@ -215,7 +215,7 @@ pip install mysqlclient
 #### Error de zona horaria
 ```python
 # En settings.py
-TIME_ZONE = 'America/Mexico_City'  # Ajustar según ubicación
+TIME_ZONE = 'America/El_Salvador'  # Ajustar según ubicación
 USE_TZ = True
 ```
 
@@ -278,10 +278,6 @@ git push origin feature/nueva-funcionalidad
 - Escribir tests para nuevas funcionalidades
 - Mantener commits atómicos y descriptivos
 
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT. Ver archivo `LICENSE` para más detalles.
-
 ## 👥 Equipo de desarrollo
 
 - **Mauricio Alexander P.** - Desarrollador principal
@@ -304,5 +300,3 @@ https://github.com/MauricioAlexanderP/Sistema-de-entrdas-y-salidas/issues
 - ✅ Manejo correcto de zonas horarias
 
 ---
-
-🚀 **¡Listo para desarrollar!** Si tienes alguna pregunta, no dudes en crear un issue o contactar al equipo de desarrollo.

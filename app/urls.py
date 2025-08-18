@@ -18,4 +18,5 @@ urlpatterns = [
         views.get_current_status_api,
         name="current_status_api",
     ),
+   
 ]
